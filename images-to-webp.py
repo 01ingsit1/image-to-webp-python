@@ -7,93 +7,92 @@ import shutil
 MAX_CONCURRENT_TASKS = 8
 
 def check_dependencies():
-    """Проверяет наличие необходимых команд в системе"""
+    """Check PATH for ffprobe and magick"""
     required_commands = ['ffprobe', 'magick']
     missing = []
-    
+
     for cmd in required_commands:
         if shutil.which(cmd) is None:
             missing.append(cmd)
-    
+
     if missing:
-        print(f"Ошибка: следующие команды не найдены в PATH: {', '.join(missing)}")
-        print("Убедитесь, что установлены:")
-        print("- FFmpeg (для ffprobe)")
-        print("- ImageMagick (для magick)")
+        print(f"Error: next commands is not found in PATH: {', '.join(missing)}")
+        print("Please, install:")
+        print("- FFmpeg (for ffprobe)")
+        print("- ImageMagick (for magick)")
         return False
-    
+
     return True
 
 def get_input_path():
-    """Запрашивает и проверяет входной путь"""
+    """Request and check input path"""
     while True:
-        path = input("Введите путь к исходной папке с изображениями: ").strip()
+        path = input("Input path: ").strip()
         if os.path.isdir(path):
             return os.path.normpath(path)
-        print(f"Ошибка: папка '{path}' не существует. Пожалуйста, введите корректный путь.")
+        print(f"Error: folder '{path}' doesn't exist. Please enter correct path.")
 
 def get_output_path():
-    """Запрашивает и проверяет выходной путь"""
+    """Request and check output path"""
     while True:
-        path = input("Введите путь к папке для сохранения результатов: ").strip()
+        path = input("Output path: ").strip()
         path = os.path.normpath(path)
-        
-        # Проверяем существование папки
+
         if not os.path.exists(path):
             try:
                 os.makedirs(path)
                 return path
             except OSError as e:
-                print(f"Ошибка при создании папки: {e}")
+                print(f"Error when creating folder: {e}")
                 continue
-        
-        # Проверяем что папка пуста
+
+        # Check folder to be empty
         if os.listdir(path):
-            print(f"Ошибка: папка '{path}' не пуста. Пожалуйста, выберите пустую папку.")
+            print(f"Error: folder '{path}' is not empty. Please chose empty folder.")
             continue
-        
+
         return path
 
 def get_quality():
-    """Запрашивает качество сжатия"""
+    """Request quality"""
     default = 89
     while True:
-        inp = input(f"Введите качество сжатия (1-100, по умолчанию {default}): ").strip()
+        inp = input(f"Enter quality (1-100, default {default}): ").strip()
         if not inp:
             return default
-        
+
         try:
             quality = int(inp)
             if 1 <= quality <= 100:
                 return quality
-            print("Ошибка: качество должно быть в диапазоне от 1 до 100.")
+            print("Error: quality should be from 1 to 100.")
         except ValueError:
-            print("Ошибка: введите целое число.")
+            print("Error: quality should be integer.")
 
 def get_lossless():
-    """Запрашивает режим lossless"""
+    """Request lossless on/off"""
     default = False
-    inp = input("Использовать lossless-сжатие? (по умолчанию нет, введите 'true' для включения): ").strip()
+    inp = input("Use lossless-compression? (default false, enter 'true' for lossless): ").strip()
     return inp.lower() == 'true'
 
 def get_append_name():
-    """Запрашивает режим добавления счетчика к именам"""
+    """Request filename iterator mode"""
     default = True
-    inp = input("Добавлять счетчик к именам файлов при дублировании? (по умолчанию да, введите 'false' для отключения): ").strip()
+    inp = input("Add iterator to filenames to avoid collision? (default true, enter 'false' to turn it off): ").strip()
     return inp.lower() != 'false'
 
 def confirm_settings(settings):
-    """Выводит настройки и ожидает подтверждения"""
-    print("\nНастройки конвертации:")
-    print(f"Качество: {settings['quality']}")
+    """Show settings and await for confirmation"""
+    print("\nConvertion settings:")
+    print(f"Quality: {settings['quality']}")
     print(f"Lossless: {settings['lossless']}")
     print(f"Append_name: {settings['append_name']}")
     print(f"Input path: {settings['input_dir']}")
     print(f"Output path: {settings['output_dir']}")
-    input("\nНажмите Enter чтобы начать конвертацию...")
+    input("\nPress Enter to start...")
 
 async def get_image_codec(filepath):
-    """Определяет кодек изображения с помощью ffprobe"""
+    """Check image codec with ffprobe"""
     cmd = [
         'ffprobe',
         '-i', filepath,
@@ -103,7 +102,7 @@ async def get_image_codec(filepath):
         '-show_entries', 'stream=codec_name',
         '-of', 'default=nw=1:nk=1'
     ]
-    
+
     proc = await asyncio.create_subprocess_exec(
         *cmd,
         stdout=asyncio.subprocess.PIPE,
@@ -113,7 +112,7 @@ async def get_image_codec(filepath):
     return stdout.decode().strip()
 
 def get_magick_command(input_path, output_path, is_apng=False, quality=89, lossless=False):
-    """Генерирует команду ImageMagick с параметрами"""
+    """ImageMagick command"""
     base_cmd = [
         'magick',
         'apng:' + input_path if is_apng else input_path,
@@ -139,10 +138,10 @@ def get_magick_command(input_path, output_path, is_apng=False, quality=89, lossl
     return base_cmd
 
 async def convert_to_webp(input_path, output_path, codec, quality, lossless):
-    """Выбирает правильный метод конвертации"""
+    """Convertion and apng switch"""
     is_apng = (codec == 'apng')
     command = get_magick_command(input_path, output_path, is_apng, quality, lossless)
-    
+
     proc = await asyncio.create_subprocess_exec(
         *command,
         stdout=asyncio.subprocess.PIPE,
@@ -152,51 +151,51 @@ async def convert_to_webp(input_path, output_path, codec, quality, lossless):
     return input_path
 
 def generate_output_filename(base_name, counter, used_names):
-    """Генерирует уникальное имя файла с учетом уже использованных"""
+    """Iterator to prevent filename collision"""
     if counter == 1:
         return base_name
-    
+
     name, ext = os.path.splitext(base_name)
     new_name = f"{name}({counter}){ext}"
-    
-    # Проверяем, не занято ли уже это имя
+
+    # Check name in use
     while new_name in used_names:
         counter += 1
         new_name = f"{name}({counter}){ext}"
-    
+
     return new_name
 
 async def process_file(input_path, output_path, semaphore, used_names, quality, lossless, append_name):
     async with semaphore:
         try:
-            # Сначала проверяем формат исходного файла
+            # Check input file format
             codec = await get_image_codec(input_path)
-            print(f"Обнаружен: {input_path} (формат: {codec})")
-            
-            # Конвертируем
+            print(f"Queued: {input_path} (format: {codec})")
+
+            # Converting
             result = await convert_to_webp(input_path, output_path, codec, quality, lossless)
-            
-            # Проверяем что файл создан
+
+            # Check for output file
             if not os.path.exists(output_path):
-                print(f"Ошибка: выходной файл не создан {output_path}")
+                print(f"Error: output file doesn't exist {output_path}")
                 return False, None, input_path
-            
-            # Проверяем формат выходного файла
+
+            # Check for output file codec
             output_codec = await get_image_codec(output_path)
             if output_codec != 'webp':
-                print(f"Ошибка: выходной файл не является webp (формат: {output_codec})")
+                print(f"Error: output file is not webp (format: {output_codec})")
                 try:
-                    os.remove(output_path)  # Удаляем невалидный файл
+                    os.remove(output_path)  # Remove if file is not webp
                 except OSError:
                     pass
                 return False, None, input_path
-            
-            print(f"Конвертировано: {input_path} -> {output_path}")
+
+            print(f"Converted: {input_path} -> {output_path}")
             return True, codec, None
-            
+
         except Exception as e:
-            print(f"Ошибка при обработке {input_path}: {str(e)}")
-            # Пытаемся удалить выходной файл в случае ошибки
+            print(f"Error when converting {input_path}: {str(e)}")
+            # Try to remove corrupted file
             if os.path.exists(output_path):
                 try:
                     os.remove(output_path)
@@ -204,18 +203,18 @@ async def process_file(input_path, output_path, semaphore, used_names, quality, 
                     pass
             return False, None, input_path
 
-async def main():    
+async def main():
     if not check_dependencies():
-        return  # Завершаем работу, если зависимости не установлены    
-    
-    # Получаем параметры от пользователя
+        return  # Terminate if dependencies are not installed
+
+    # Getting settings from user
     input_dir = get_input_path()
     output_dir = get_output_path()
     quality = get_quality()
     lossless = get_lossless()
     append_name = get_append_name()
-    
-    # Показываем настройки и ждем подтверждения
+
+    # Show settings and waiting for confirmation
     settings = {
         'quality': quality,
         'lossless': lossless,
@@ -224,15 +223,15 @@ async def main():
         'output_dir': output_dir
     }
     confirm_settings(settings)
-    
-    # Основной код конвертации
+
+    # Main convertion
     semaphore = asyncio.Semaphore(MAX_CONCURRENT_TASKS)
     valid_exts = ('.webp', '.jpg', '.jpeg', '.png', '.bmp', '.gif', '.tiff', '.tif')
-    
-    # Собираем файлы в два этапа: сначала webp, потом остальные
+
+    # We collect files in two stages: first webp, then the rest
     webp_files = []
     other_files = []
-    
+
     for root, _, files in os.walk(input_dir):
         for filename in files:
             if filename.lower().endswith(valid_exts):
@@ -241,32 +240,32 @@ async def main():
                     webp_files.append(input_path)
                 else:
                     other_files.append(input_path)
-    
-    # Объединяем списки с приоритетом для webp
+
+    # Merge lists with priority for webp
     all_files = webp_files + other_files
-    
-    # Словарь для отслеживания использованных имен
+
+    # List to check filenames in use
     output_names = defaultdict(int)
     used_names = set()
     skipped_files = []
-    
+
     tasks = []
-    
+
     for input_path in all_files:
         rel_path = os.path.relpath(input_path, input_dir)
         base_name = os.path.splitext(os.path.basename(rel_path))[0] + ".webp"
         rel_dir = os.path.dirname(rel_path)
-        
-        # Полный относительный путь для выходного файла (включая поддиректории)
+
+        # Full relative path for the output file (including subdirectories)
         full_rel_path = os.path.join(rel_dir, base_name) if rel_dir else base_name
-        
-        # Определяем выходное имя файла
+
+        # Define the output file name
         if append_name:
-            # Увеличиваем счетчик для этого полного относительного пути
+            # Increment the counter for this full relative path
             output_names[full_rel_path] += 1
             counter = output_names[full_rel_path]
-            
-            # Генерируем уникальное имя только если counter > 1
+
+            # Generate a unique name only if
             if counter > 1:
                 name, ext = os.path.splitext(base_name)
                 output_filename = f"{name}({counter}){ext}"
@@ -275,45 +274,45 @@ async def main():
                 output_path = os.path.join(output_dir, rel_dir, base_name)
         else:
             output_path = os.path.join(output_dir, full_rel_path)
-            
-            # Проверяем, не обрабатывали ли мы уже файл с таким именем
+
+            # Checking if we already process file with that name
             if output_path in used_names:
                 skipped_files.append(input_path)
                 continue
-        
+
         os.makedirs(os.path.dirname(output_path), exist_ok=True)
         tasks.append(process_file(input_path, output_path, semaphore, used_names, quality, lossless, append_name))
         used_names.add(output_path)
-    
+
     success_count = 0
     failed_files = []
-    
+
     for future in asyncio.as_completed(tasks):
         success, codec, failed_file = await future
         if success:
             success_count += 1
         elif failed_file:
             failed_files.append(failed_file)
-    
-    # Записываем пропущенные файлы (только если append_name = False)
+
+    # Add skipped files to log (only if append_name = False)
     if not append_name and skipped_files:
         skipped_log_path = os.path.join(input_dir, "skipped_files.log")
         with open(skipped_log_path, 'w', encoding='utf-8') as f:
-            f.write("Следующие файлы были пропущены из-за конфликта имен:\n")
+            f.write("Next file was skipped due to the names collision:\n")
             for file in skipped_files:
                 f.write(f"{file}\n")
-        print(f"\nЗаписаны пропущенные файлы в {skipped_log_path}")
-    
-    # Записываем файлы с ошибками
+        print(f"\nAdded to skipped files in {skipped_log_path}")
+
+    # Add error files to log
     if failed_files:
         error_log_path = os.path.join(input_dir, "failed_files.log")
         with open(error_log_path, 'w', encoding='utf-8') as f:
-            f.write("Следующие файлы не удалось обработать из-за ошибок:\n")
+            f.write("Next files was not converted due to the errors:\n")
             for file in failed_files:
                 f.write(f"{file}\n")
-        print(f"\nЗаписаны файлы с ошибками в {error_log_path}")
-    
-    print(f"\nГотово! Успешно обработано {success_count} файлов.")
+        print(f"\nAdded to error log in {error_log_path}")
+
+    print(f"\nDone! Converted {success_count} files.")
 
 if __name__ == "__main__":
     asyncio.run(main())
