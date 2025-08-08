@@ -122,16 +122,20 @@ def get_magick_command(input_path, output_path, is_apng=False, quality=89, lossl
         '-quality', str(quality),
         '-define', 'webp:alpha-compression=1',
         '-define', 'webp:alpha-filtering=2',
-        '-define', f'webp:alpha-quality={quality}',
-        '-define', 'webp:alpha-filter=true',
-        '-define', 'webp:filter-strength=100',
+        '-define', 'webp:alpha-quality=100',
+        '-define', 'webp:auto-filter=true',
+        '-define', 'webp:filter-sharpness=4',
+        '-define', 'webp:filter-strength=50',
         '-define', 'webp:filter-type=1',
         '-define', f'webp:lossless={"true" if lossless else "false"}',
         '-define', 'webp:method=6',
+        '-define', 'webp:preprocessing=1',      # 0 - none, 1 - segment-smooth, 2 - pseudo-random dithering
         '-define', 'webp:partitions=3',
         '-define', 'webp:partition-limit=0',
         '-define', 'webp:pass=10',
         '-define', 'webp:segment=4',
+        '-define', 'webp:sns-strength=80',      # 0-100, default 80. higher value = more bits to edges, less to plain part of the image
+        '-define', 'webp:thread-level=1',
         '-define', 'webp:use-sharp-yuv=true',
         output_path
     ]
