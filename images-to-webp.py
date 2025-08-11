@@ -154,22 +154,7 @@ async def convert_to_webp(input_path, output_path, codec, quality, lossless):
     await proc.communicate()
     return input_path
 
-def generate_output_filename(base_name, counter, used_names):
-    """Iterator to prevent filename collision"""
-    if counter == 1:
-        return base_name
-
-    name, ext = os.path.splitext(base_name)
-    new_name = f"{name}({counter}){ext}"
-
-    # Check name in use
-    while new_name in used_names:
-        counter += 1
-        new_name = f"{name}({counter}){ext}"
-
-    return new_name
-
-async def process_file(input_path, output_path, semaphore, used_names, quality, lossless, append_name):
+async def process_file(input_path, output_path, semaphore, quality, lossless, append_name):
     async with semaphore:
         try:
             # Check input file format
@@ -248,7 +233,7 @@ async def main():
     # Merge lists with priority for webp
     all_files = webp_files + other_files
 
-    # List to check filenames in use
+    # List to check filenames in use (case-insensitive for Windows)
     output_names = defaultdict(int)
     used_names = set()
     skipped_files = []
@@ -265,28 +250,42 @@ async def main():
 
         # Define the output file name
         if append_name:
-            # Increment the counter for this full relative path
-            output_names[full_rel_path] += 1
-            counter = output_names[full_rel_path]
+            # Use normalized (lowercase) relative path as key
+            key = full_rel_path.lower()
+            output_names[key] += 1
+            counter = output_names[key]
 
-            # Generate a unique name only if
-            if counter > 1:
-                name, ext = os.path.splitext(base_name)
-                output_filename = f"{name}({counter}){ext}"
-                output_path = os.path.join(output_dir, rel_dir, output_filename)
+            name, ext = os.path.splitext(base_name)
+            if counter == 1:
+                output_filename = base_name
             else:
-                output_path = os.path.join(output_dir, rel_dir, base_name)
+                output_filename = f"{name}({counter}){ext}"
+
+            output_path = os.path.join(output_dir, rel_dir, output_filename)
+            norm_output = output_path.lower()
+
+            # Ensure unique filename (case-insensitive)
+            current_counter = counter
+            while norm_output in used_names:
+                current_counter += 1
+                output_filename = f"{name}({current_counter}){ext}"
+                output_path = os.path.join(output_dir, rel_dir, output_filename)
+                norm_output = output_path.lower()
+
+            used_names.add(norm_output)
         else:
             output_path = os.path.join(output_dir, full_rel_path)
+            norm_output = output_path.lower()
 
-            # Checking if we already process file with that name
-            if output_path in used_names:
+            # Skip if filename already used (case-insensitive)
+            if norm_output in used_names:
                 skipped_files.append(input_path)
                 continue
 
+            used_names.add(norm_output)
+
         os.makedirs(os.path.dirname(output_path), exist_ok=True)
-        tasks.append(process_file(input_path, output_path, semaphore, used_names, quality, lossless, append_name))
-        used_names.add(output_path)
+        tasks.append(process_file(input_path, output_path, semaphore, quality, lossless, append_name))
 
     success_count = 0
     failed_files = []
