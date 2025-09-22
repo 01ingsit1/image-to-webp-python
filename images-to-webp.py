@@ -71,13 +71,11 @@ def get_quality():
 
 def get_lossless():
     """Request lossless on/off"""
-    default = False
     inp = input("Use lossless-compression? (default false, enter 'true' for lossless): ").strip()
     return inp.lower() == 'true'
 
 def get_append_name():
     """Request filename iterator mode"""
-    default = True
     inp = input("Add iterator to filenames to avoid collision? (default true, enter 'false' to turn it off): ").strip()
     return inp.lower() != 'false'
 
@@ -152,9 +150,8 @@ async def convert_to_webp(input_path, output_path, codec, quality, lossless):
         stderr=asyncio.subprocess.PIPE
     )
     await proc.communicate()
-    return input_path
 
-async def process_file(input_path, output_path, semaphore, quality, lossless, append_name):
+async def process_file(input_path, output_path, semaphore, quality, lossless):
     async with semaphore:
         try:
             # Check input file format
@@ -162,7 +159,7 @@ async def process_file(input_path, output_path, semaphore, quality, lossless, ap
             print(f"Queued: {input_path} (format: {codec})")
 
             # Converting
-            result = await convert_to_webp(input_path, output_path, codec, quality, lossless)
+            await convert_to_webp(input_path, output_path, codec, quality, lossless)
 
             # Check for output file
             if not os.path.exists(output_path):
@@ -177,10 +174,10 @@ async def process_file(input_path, output_path, semaphore, quality, lossless, ap
                     os.remove(output_path)  # Remove if file is not webp
                 except OSError:
                     pass
-                return False, None, input_path
+                return False, input_path
 
             print(f"Converted: {input_path} -> {output_path}")
-            return True, codec, None
+            return True, None
 
         except Exception as e:
             print(f"Error when converting {input_path}: {str(e)}")
@@ -190,7 +187,7 @@ async def process_file(input_path, output_path, semaphore, quality, lossless, ap
                     os.remove(output_path)
                 except OSError:
                     pass
-            return False, None, input_path
+            return False, input_path
 
 async def main():
     if not check_dependencies():
@@ -215,7 +212,7 @@ async def main():
 
     # Main convertion
     semaphore = asyncio.Semaphore(MAX_CONCURRENT_TASKS)
-    valid_exts = ('.webp', '.jpg', '.jpeg', '.png', '.bmp', '.gif', '.tiff', '.tif')
+    valid_exts = ('.webp', '.jpg', '.jpeg', '.png', '.bmp', '.gif', '.tiff', '.tif', '.avif')
 
     # We collect files in two stages: first webp, then the rest
     webp_files = []
@@ -285,13 +282,13 @@ async def main():
             used_names.add(norm_output)
 
         os.makedirs(os.path.dirname(output_path), exist_ok=True)
-        tasks.append(process_file(input_path, output_path, semaphore, quality, lossless, append_name))
+        tasks.append(process_file(input_path, output_path, semaphore, quality, lossless))
 
     success_count = 0
     failed_files = []
 
     for future in asyncio.as_completed(tasks):
-        success, codec, failed_file = await future
+        success, failed_file = await future
         if success:
             success_count += 1
         elif failed_file:
