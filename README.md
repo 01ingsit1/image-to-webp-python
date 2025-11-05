@@ -1,2 +1,2 @@
 # image-to-webp-python
-Python script for converting most popular images format to webp.
+Python script for multithreaded convertion of most popular image formats to webp.
