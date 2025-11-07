@@ -36,7 +36,8 @@ def check_dependencies():
         if shutil.which(cmd) is None:
             missing.append(cmd)
     if missing:
-        print(f"Error: the following commands were not found in PATH: {', '.join(missing)}")
+        print(f"Error: the following commands were not found in PATH:"
+              f" {', '.join(missing)}")
         print("Please install:")
         if 'ffprobe' in missing:
             print("- FFmpeg (for ffprobe)")
