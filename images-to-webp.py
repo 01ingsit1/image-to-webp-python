@@ -134,6 +134,8 @@ def get_image_codec(filepath):
             cmd,
             capture_output=True,
             text=True,
+            encoding='utf-8',
+            errors='ignore',
             check=True,
             timeout=30
         )
@@ -189,8 +191,10 @@ def magick_command(params):
         result = subprocess.run(
             cmd,
             capture_output=True,
-            check=True,
-            text=True
+            text=True,
+            encoding='utf-8',
+            errors='ignore',
+            check=True
         )
         return result
     except subprocess.CalledProcessError as e:
