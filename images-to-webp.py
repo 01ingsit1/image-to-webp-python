@@ -312,11 +312,10 @@ async def process_image(file: Path, semaphore: asyncio.Semaphore,
                 await asyncio.sleep(delay)
         else:
             async with names_lock:
-                failed_message = f"Unrecognized output codec"
+                failed_message = f"Unrecognized output codec: {image_codec}"
                 failed_files.setdefault(str(file_path), failed_message)
                 if (image_output_path.exists()):
                     image_output_path.unlink()
-                return
 
 
 async def main():
