@@ -299,14 +299,24 @@ async def process_image(file: Path, semaphore: asyncio.Semaphore,
                 if (image_output_path.exists()):
                     image_output_path.unlink()
                 return
-        image_codec = await asyncio.to_thread(get_image_codec,
-                                              image_output_path)
-        async with names_lock:
-            if image_codec != 'webp':
-                failed_message = f"Unrecognized output codec: {image_codec}"
+        # multiple checks for output files, in case if check returned not webp
+        max_attempts = 5
+        delay = 0.5
+        image_codec = None
+        for attempt in range(max_attempts):
+            image_codec = await asyncio.to_thread(get_image_codec,
+                                                  image_output_path)
+            if image_codec == 'webp':
+                break  # Success, stop trying
+            if attempt < (max_attempts - 1):  # Waiting for 0.5 seconds
+                await asyncio.sleep(delay)
+        else:
+            async with names_lock:
+                failed_message = f"Unrecognized output codec"
                 failed_files.setdefault(str(file_path), failed_message)
                 if (image_output_path.exists()):
                     image_output_path.unlink()
+                return
 
 
 async def main():
