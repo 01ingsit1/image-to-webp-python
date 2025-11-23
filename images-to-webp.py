@@ -155,12 +155,41 @@ def iterate_filename(collision_path, iterator):
     return iteratepath
 
 
+def magick_mpc(mpcparams):
+    input_path, output_path, is_apng  = mpcparams
+    cmd = [
+        'magick',
+        ('apng:' + input_path) if is_apng else inputpath,
+        output_path
+    ]
+    try:
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            encoding='utf-8',
+            errors='ignore',
+            check=True
+        )
+        return result
+    except subprocess.CalledProcessError as e:
+        print(f"Error processing {mpcparams[0]}: {e}")
+        if e.stderr:
+            print(f"Error: {str(e.stderr.strip())}")
+            return f"Error: {str(e.stderr.strip())}"
+    except Exception as e:
+        if e:
+            print(f"Error: {str(e)}")
+            return f"Error: {str(e)}"
+
+
 def magick_command(params):
-    input_path, output_path, is_apng, quality, lossless = params
+    input_path, output_path, quality, lossless = params
     cmd = [
         'magick',
         # this correctly process apng files as animated
-        ('apng:' + input_path) if is_apng else input_path,
+        input_path,
+        '-write', 'MPR:source', '+delete', 'MPR:source',
         '-auto-orient',
         '-coalesce',
         '-strip',
@@ -288,6 +317,20 @@ async def process_image(file: Path, semaphore: asyncio.Semaphore,
                     skipped_files.setdefault(str(file_path), 'exist')
                     return
                 used_names.add(str(image_output_path.absolute()))
+
+        mpcpath = image_output_path.parent / (image_output_path.stem + '.mpc')
+        mpccache = mpcpath.parent / (mpcpath.stem + '.cache')
+        mpcparams = str(file_path), str(mpcpath), is_apng
+        result = await asyncio.to_thread(magick_mpc, mpcparams)
+        async with names_lock:
+            if isinstance(result, str) and result.startswith('Error:'):
+                failed_files.setdefault(str(file_path), result)
+                if (mpcpath.exists()):
+                    mpcpath.unlink()
+                if (mpccache.exists()):
+                    mpccache.unlink()
+                return
+
         # console output for files in encoding
         async with names_lock:
             processed_name = str(file_path)
@@ -295,7 +338,7 @@ async def process_image(file: Path, semaphore: asyncio.Semaphore,
             print(f"Processing({counter.value}/{total_files}) "
                   f"{processed_name}")
         # encoding
-        params = str(file_path), image_output_path, is_apng, quality, lossless
+        params = str(mpcpath), str(image_output_path), quality, lossless
         result = await asyncio.to_thread(magick_command, params)
         async with names_lock:
             if isinstance(result, str) and result.startswith('Error:'):
@@ -320,6 +363,11 @@ async def process_image(file: Path, semaphore: asyncio.Semaphore,
                 failed_files.setdefault(str(file_path), failed_message)
                 if (image_output_path.exists()):
                     image_output_path.unlink()
+        # removing mpc cache after conversion
+        if (mpcpath.exists()):
+            mpcpath.unlink()
+        if (mpccache.exists()):
+            mpccache.unlink()
 
 
 async def main():

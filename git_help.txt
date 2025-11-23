@@ -1,0 +1,91 @@
+1. Основные команды для начала
+Настройка Git
+bash
+
+git config --global user.name "Ваше Имя"          # Установить имя
+git config --global user.email "ваша@почта.com"   # Установить почту
+git config --global core.editor "code --wait"     # Установить VS Code как редактор по умолчанию
+
+Инициализация и клонирование
+bash
+
+git init                          # Создать новый репозиторий в текущей папке
+git clone git@github.com:user/repo.git  # Клонировать репозиторий по SSH
+
+2. Работа с изменениями
+bash
+
+git status                        # Показать измененные/новые файлы
+git add file.ps1                  # Добавить конкретный файл в индекс
+git add .                         # Добавить ВСЕ измененные файлы
+git commit -m "Описание правок"   # Закоммитить изменения
+git push origin main              # Отправить коммиты в удалённый репозиторий
+
+3. Ветки (branches)
+bash
+
+git branch                        # Показать все ветки (текущая выделена *)
+git branch new-feature            # Создать новую ветку
+git checkout new-feature          # Переключиться на ветку
+git switch new-feature            # Альтернатива checkout (Git 2.23+)
+git push -u origin new-feature    # Отправить новую ветку на GitHub
+git merge new-feature             # Влить ветку в текущую (например, в main)
+git branch -d new-feature         # Удалить локальную ветку
+
+4. Сравнение изменений
+bash
+
+git diff                          # Показать недобавленные изменения
+git diff --staged                 # Показать изменения в индексе (после git add)
+git diff main..new-feature        # Сравнить две ветки
+git log -p                        # Показать историю коммитов с изменениями
+
+5. Работа с удалённым репозиторием (GitHub)
+bash
+
+git pull origin main              # Скачать изменения с GitHub (обновить локальную версию)
+git fetch                         # Проверить изменения на GitHub без слияния
+git remote -v                     # Показать привязанные удалённые репозитории
+git push --force                  # Принудительно перезаписать историю (осторожно!)
+
+6. Отмена действий
+bash
+
+git restore file.ps1              # Откатить изменения в файле (до git add)
+git restore --staged file.ps1     # Убрать файл из индекса (после git add)
+git commit --amend                # Исправить последний коммит (изменить сообщение или добавть файлы)
+git reset --hard HEAD~1           # Удалить последний коммит (осторожно!)
+
+7. Полезные мелочи
+bash
+
+git log --oneline                 # Краткая история коммитов
+git stash                         # Временно "спрятать" изменения
+git stash pop                     # Вернуть спрятанные изменения
+git tag v1.0                      # Создать тег (например, для версии)
+git blame file.ps1                # Показать автора каждой строки в файле
+
+Пример рабочего процесса
+
+    Создаём ветку для новой фичи:
+    bash
+
+git checkout -b fix-script  # Создать и переключиться на ветку
+
+Вносим изменения в файлы, проверяем:
+bash
+
+git diff
+
+Добавляем и коммитим:
+bash
+
+git add .
+git commit -m "Исправил баг в скрипте"
+
+Пушим в удалённый репозиторий:
+bash
+
+git push -u origin fix-script
+
+На GitHub через интерфейс создаём Pull Request (PR) для слияния в main.
