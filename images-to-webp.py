@@ -161,6 +161,7 @@ def magick_command(params):
         'magick',
         # this correctly process apng files as animated
         ('apng:' + input_path) if is_apng else input_path,
+        '-write', 'MPR:source', '+delete', 'MPR:source',
         '-auto-orient',
         '-coalesce',
         '-strip',
@@ -185,6 +186,7 @@ def magick_command(params):
         '-define', 'webp:sns-strength=80',
         '-define', 'webp:thread-level=1',
         '-define', 'webp:use-sharp-yuv=true',
+        '-write', 'MPR:output', '+delete', 'MPR:output',
         output_path
     ]
     try:
