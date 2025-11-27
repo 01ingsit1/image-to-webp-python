@@ -25,7 +25,8 @@ CODECS = [
     'mjpeg',
     'png',
     'tiff',
-    'webp'
+    'webp',
+    'bmp'
 ]
 
 
