@@ -148,9 +148,7 @@ Limitations
 
     Only converts to WebP format
 
-    Metadata may be stripped during conversion (due to -strip option)
-
-    Animated images only supported for APNG format
+    Metadata will be stripped during conversion (due to -strip option)
 
 Troubleshooting
 "Command not found" errors
