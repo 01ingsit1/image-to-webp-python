@@ -57,6 +57,7 @@ bash
 python script_name.py
 
 You will be prompted for:
+
     Input path: Directory containing source images
 
     Output path: Directory where WebP files will be saved
