@@ -52,7 +52,6 @@ Usage
 Basic Interactive Mode
 
 Run the script and follow the prompts:
-bash
 
 python script_name.py
 
