@@ -104,7 +104,7 @@ How It Works
 
     Codec Detection: Uses FFprobe to identify each image's format
 
-    Parallel Processing: Processes multiple images concurrently (up to 8)
+    Parallel Processing: Processes multiple images concurrently
 
     Conversion: Uses ImageMagick with optimized WebP settings
 
