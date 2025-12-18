@@ -53,7 +53,7 @@ Basic Interactive Mode
 
 Run the script and follow the prompts:
 
-python script_name.py
+    python script_name.py
 
 You will be prompted for:
 
